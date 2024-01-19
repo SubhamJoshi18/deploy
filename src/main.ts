@@ -1,5 +1,4 @@
 import express from 'express'
-import todoRouter from './routes/todo.router'
 import userRouter from './routes/user.router'
 import { Response, Request, NextFunction } from 'express'
 import buildError from './util/build-errors'
@@ -12,8 +11,6 @@ const PORT = 3000
 app.listen(PORT, () => {
     console.log(`Server ready at : localhost:${PORT}`)
 })
-
-app.use('/todos', todoRouter)
 
 app.use('/user', userRouter)
 
