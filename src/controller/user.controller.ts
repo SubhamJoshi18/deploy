@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import * as userService from '../service/user.service'
-import { signupBodyDTO } from '../validators/signup.validator'
-import { loginBodyDTO } from '../validators/login.validator'
+import { signupBodyDTO, loginBodyDTO } from '../validators/auth.validators'
+import { authenticateToken } from '../middlewares/auth.middleware'
+import { RequestWithUserObject } from '../types'
 
 //REGISTER
 export const register = async (
@@ -10,10 +11,13 @@ export const register = async (
     next: NextFunction
 ) => {
     try {
+        const start = performance.now()
         const createdUser = await userService.signup(
             signupBodyDTO.parse(req.body)
         )
-        res.status(201).json(createdUser)
+        const end = performance.now()
+        const resTime = start - end
+        res.status(201).json({ createdUser, 'Response time: ': resTime })
     } catch (err) {
         next(err)
     }
@@ -39,10 +43,30 @@ export const login = async (
         next(error)
     }
 }
+//LOGOUT
+// export const logout = async (
+//     req: Request,
+//     res: Response,
+//     next: NextFunction
+// ) => {
+//     try {
+//         const { email, password } = loginBodyDTO.parse(req.body)
+
+//         const { accessToken, refreshToken } = await userService.login(
+//             email,
+//             password
+//         )
+//         res.cookie('refreshToken', refreshToken, {
+//             httpOnly: true,
+//         }).json({ accessToken })
+//     } catch (error) {
+//         next(error)
+//     }
+// }
 
 //DELETE user
 export const deleteUser = async (
-    req: Request,
+    req: RequestWithUserObject,
     res: Response,
     next: NextFunction
 ) => {
@@ -56,6 +80,7 @@ export const deleteUser = async (
     }
 }
 
+//REFRESH
 export const refreshToken = async (
     req: Request,
     res: Response,
@@ -65,6 +90,50 @@ export const refreshToken = async (
     try {
         const token = await userService.refresh(refreshToken)
         res.json({ accessToken: token })
+    } catch (error) {
+        next(error)
+    }
+}
+
+//GET user by id
+export const getUser = async (
+    req: RequestWithUserObject,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const userID = req.user.userId
+        const user = await userService.getUser(userID)
+        res.json({ user: user })
+    } catch (error) {
+        next(error)
+    }
+}
+
+//UPDATE
+export const updateUser = async (
+    req: RequestWithUserObject,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const userID = req.user.userId
+        const user = await userService.updateUser(userID, req.body)
+        res.json({ user: user })
+    } catch (error) {
+        next(error)
+    }
+}
+
+//GET all user
+export const getAllUser = async (
+    req: RequestWithUserObject,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = await userService.getAllUser()
+        res.json({ user: user })
     } catch (error) {
         next(error)
     }

@@ -5,7 +5,7 @@ export const createAccessToken = (userId: number, isAdmin: boolean) => {
         { userId, isAdmin },
         process.env.ACCESS_TOKEN_SECRET as string,
         {
-            expiresIn: '20m',
+            expiresIn: '30m',
         }
     )
 }

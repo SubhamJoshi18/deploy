@@ -2,7 +2,8 @@ import Boom from '@hapi/boom'
 import prisma from '../util/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { signupBodyDTO } from '../validators/signup.validator'
+import { exclude } from '../util/exclude'
+import { signupBodyDTO } from '../validators/auth.validators'
 import {
     createAccessToken,
     verifyRefreshToken,
@@ -12,18 +13,18 @@ import {
 
 //SIGNUP
 export const signup = async (user: z.infer<typeof signupBodyDTO>) => {
-    const { email, password, isAdmin } = user
+    const { email, password, is_admin } = user
     try {
         return await prisma.user.create({
             data: {
                 email,
                 password: await bcrypt.hash(password, 10),
-                isAdmin: isAdmin,
+                is_admin: is_admin,
             },
             select: {
                 email: true,
                 id: true,
-                isAdmin: true,
+                is_admin: true,
             },
         })
     } catch (err: any) {
@@ -43,8 +44,8 @@ export const login = async (email: string, password: string) => {
     if (!passwordMatch) {
         throw Boom.badRequest('Username or password is incorrect.')
     }
-    const accessToken = createAccessToken(user.id, user.isAdmin)
-    const refreshToken = createRefreshToken(user.id, user.isAdmin)
+    const accessToken = createAccessToken(user.id, user.is_admin)
+    const refreshToken = createRefreshToken(user.id, user.is_admin)
 
     return { accessToken, refreshToken }
 }
@@ -78,4 +79,56 @@ export const removeUser = async (email: string, password: string) => {
             email: user.email,
         },
     })
+}
+
+//GET by id
+export const getUser = async (id: number) => {
+    try {
+        const user = await prisma.user.findFirstOrThrow({
+            where: { id },
+            include: {
+                addresses: true,
+            },
+        })
+        return exclude(user, ['password'])
+    } catch (err: any) {
+        if (err.code === 'P2025') {
+            throw Boom.notFound(`User with id ${id} does not exist`)
+        }
+        throw err
+    }
+}
+
+//GET all user for admin
+export const getAllUser = async () => {
+    try {
+        const user = await prisma.user.findMany()
+        return user
+    } catch (err: any) {
+        throw err
+    }
+}
+//UPDATE
+export const updateUser = async (
+    id: number,
+    body: z.infer<typeof signupBodyDTO>
+) => {
+    const { email, password } = body
+    try {
+        await prisma.user.findUniqueOrThrow({
+            where: { id: Number(id) },
+        })
+        return await prisma.user.update({
+            where: { id: Number(id) },
+            data: {
+                email: email,
+                password: password,
+            },
+        })
+    } catch (err: any) {
+        if (err.code === 'P2025') {
+            throw Boom.notFound(`User with id ${id} does not exist`)
+        }
+        throw err
+    }
 }
