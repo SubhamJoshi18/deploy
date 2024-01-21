@@ -13,7 +13,7 @@ export const signupBodyDTO = z.object({
         required_error: 'password is required',
     }),
     is_admin: z.boolean().default(false),
-    phone_number: z.string(),
+    phone_number: z.optional(z.string()),
 })
 
 export const signupDTO = z.object({

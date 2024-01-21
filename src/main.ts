@@ -1,5 +1,6 @@
 import express from 'express'
 import userRouter from './routes/user.router'
+import adminRouter from './routes/admin.router'
 import { Response, Request, NextFunction } from 'express'
 import buildError from './util/build-errors'
 const app = express()
@@ -13,6 +14,7 @@ app.listen(PORT, () => {
 })
 
 app.use('/user', userRouter)
+app.use('/admin', adminRouter)
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const error = buildError(err)

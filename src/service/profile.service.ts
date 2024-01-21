@@ -44,12 +44,36 @@ export const login = async (email: string, password: string) => {
     if (!passwordMatch) {
         throw Boom.badRequest('Username or password is incorrect.')
     }
+
+    if (user.is_admin) {
+        throw Boom.badRequest('Admin account not usable here')
+    }
     const accessToken = createAccessToken(user.id, user.is_admin)
     const refreshToken = createRefreshToken(user.id, user.is_admin)
 
     return { accessToken, refreshToken }
 }
 
+export const adminLogin = async (email: string, password: string) => {
+    const user = await prisma.user.findFirst({ where: { email } })
+    if (!user) {
+        throw Boom.badRequest('Username or password is incorrect.')
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password)
+
+    if (!passwordMatch) {
+        throw Boom.badRequest('Username or password is incorrect.')
+    }
+
+    if (!user.is_admin) {
+        throw Boom.unauthorized('Admin only login')
+    }
+    const accessToken = createAccessToken(user.id, user.is_admin)
+    const refreshToken = createRefreshToken(user.id, user.is_admin)
+
+    return { accessToken, refreshToken }
+}
 //REFRESH
 export async function refresh(refreshToken: string) {
     try {
@@ -62,12 +86,18 @@ export async function refresh(refreshToken: string) {
 }
 
 //DELETE USER
-export const removeUser = async (email: string, password: string) => {
+export const removeUser = async (
+    email: string,
+    password: string,
+    is_admin: boolean
+) => {
     const user = await prisma.user.findFirst({ where: { email } })
     if (!user) {
         throw Boom.badRequest('Username or password is incorrect.')
     }
-
+    if (user.is_admin && !is_admin) {
+        throw Boom.badRequest('Cannot delete admin')
+    }
     const passwordMatch = await bcrypt.compare(password, user.password)
 
     if (!passwordMatch) {
@@ -81,7 +111,21 @@ export const removeUser = async (email: string, password: string) => {
     })
 }
 
-//GET by id
+//DELETE by id
+export const removeUserByID = async (id: number) => {
+    const user = await prisma.user.findFirst({ where: { id } })
+    if (!user) {
+        throw Boom.notFound('ID does not exist')
+    }
+
+    return prisma.user.delete({
+        where: {
+            id: id,
+        },
+    })
+}
+
+//GET user
 export const getUser = async (id: number) => {
     try {
         const user = await prisma.user.findFirstOrThrow({
@@ -98,7 +142,23 @@ export const getUser = async (id: number) => {
         throw err
     }
 }
-
+//GEt by id
+export const getUserByID = async (id: number) => {
+    try {
+        const user = await prisma.user.findFirstOrThrow({
+            where: { id },
+            include: {
+                addresses: true,
+            },
+        })
+        return exclude(user, ['password'])
+    } catch (err: any) {
+        if (err.code === 'P2025') {
+            throw Boom.notFound(`User with id ${id} does not exist`)
+        }
+        throw err
+    }
+}
 //GET all user for admin
 export const getAllUser = async () => {
     try {
@@ -108,6 +168,7 @@ export const getAllUser = async () => {
         throw err
     }
 }
+
 //UPDATE
 export const updateUser = async (
     id: number,

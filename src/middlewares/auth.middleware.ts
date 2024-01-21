@@ -17,7 +17,7 @@ export function authenticateToken(
 
     try {
         const decodedToken = verifyAccessToken(token)
-        console.log(decodedToken)
+        console.log(decodedToken, 'this is decoded')
         req.user = decodedToken as UserJWTPayload
 
         next()
@@ -41,31 +41,43 @@ export function isAdmin(
     }
 }
 
-// export function isUser(
-//     req: RequestWithUserObject,
-//     res: Response,
-//     next: NextFunction
-// ) {
-//     const { user } = req
-//     const token =
-//     req.headers.authorization && req.headers.authorization.split(' ')[1]
-// if (!token) {
-//     throw Boom.badRequest('Missing authentication token')
-// }
+export function isUser(
+    req: RequestWithUserObject,
+    res: Response,
+    next: NextFunction
+) {
+    const { user } = req
 
-//     const decodedToken = jwt.decode(token)
-//     // const obj = JSON.parse(decodedToken)
-// try {    //if(user.userId != decodedToken.)
+    if (!user.isAdmin) {
+        next()
+    } else {
+        throw Boom.forbidden('Admin do not have this privilage')
+    }
+}
 
-//     next()
-// } catch (error) {
-//     throw Boom.unauthorized('User is not logged in')
-// }
+export function isMyAccount(
+    req: RequestWithUserObject,
+    res: Response,
+    next: NextFunction
+) {
+    const token =
+        req.headers.authorization && req.headers.authorization.split(' ')[1]
+    if (!token) {
+        throw Boom.badRequest('Missing authentication token')
+    }
 
-//     if (user.userId == ) {
-//         console.log(user.isAdmin)
-//         next()
-//     } else {
-//         throw Boom.forbidden('This is not your account')
-//     }
-// }
+    const decodedToken = jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET as string
+    ) as { userId?: number; isAdmin?: boolean }
+
+    const { userId, isAdmin } = decodedToken
+    console.log(userId, 'UIDDDD')
+
+    if (userId && req.user.userId === userId) {
+        console.log(userId, ' and ', req.user.userId)
+        next()
+    } else {
+        throw Boom.unauthorized('delete your own damn profile')
+    }
+}

@@ -1,23 +1,33 @@
 import { Router } from 'express'
 import * as userController from '../controller/user.controller'
+import * as authController from '../controller/auth.controller'
 import { validate } from '../util/validate'
 import { loginDTO, signupDTO } from '../validators/auth.validators'
-import { authenticateToken, isAdmin } from '../middlewares/auth.middleware'
+import {
+    authenticateToken,
+    isMyAccount,
+    isUser,
+} from '../middlewares/auth.middleware'
 const router = Router()
 
-router.post('/signup', validate(signupDTO), userController.register)
-router.post('/login', validate(signupDTO), userController.login)
+router.post('/signup', authController.register)
+router.post('/login', authController.login)
+router.post('/refresh', authenticateToken, authController.refreshToken)
 //router.post('/logout', userController.logout)
+router.get('/profile', authenticateToken, isUser, userController.getUser)
 router.delete(
-    '/admin/delete',
+    '/profile/delete',
     authenticateToken,
-    isAdmin,
+    isUser,
+    isMyAccount,
     userController.deleteUser
 )
-router.delete('/delete', authenticateToken, userController.deleteUser)
-router.post('/refresh', authenticateToken, userController.refreshToken)
-router.put('/update', authenticateToken, userController.updateUser)
-router.get('/', authenticateToken, userController.getUser)
-router.get('/', authenticateToken, isAdmin, userController.getAllUser)
+router.put(
+    '/profile/update',
+    authenticateToken,
+    isUser,
+    isMyAccount,
+    userController.updateUser
+)
 
 export default router

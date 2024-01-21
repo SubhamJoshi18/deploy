@@ -21,6 +21,7 @@ model User {
   is_admin     Boolean     @default(false)
   addresses    Address[]
 }
+
 //PRODUCTS
 model Product {
   id            Int             @id @default(autoincrement())
