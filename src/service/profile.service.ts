@@ -86,27 +86,18 @@ export async function refresh(refreshToken: string) {
 }
 
 //DELETE USER
-export const removeUser = async (
-    email: string,
-    password: string,
-    is_admin: boolean
-) => {
-    const user = await prisma.user.findFirst({ where: { email } })
+export const removeUser = async (id: number, is_admin: boolean) => {
+    const user = await prisma.user.findFirst({ where: { id } })
     if (!user) {
-        throw Boom.badRequest('Username or password is incorrect.')
+        throw Boom.badRequest('Id does not exist.')
     }
     if (user.is_admin && !is_admin) {
         throw Boom.badRequest('Cannot delete admin')
     }
-    const passwordMatch = await bcrypt.compare(password, user.password)
-
-    if (!passwordMatch) {
-        throw Boom.badRequest('Username or password is incorrect.')
-    }
 
     return prisma.user.delete({
         where: {
-            email: user.email,
+            id,
         },
     })
 }
@@ -142,7 +133,7 @@ export const getUser = async (id: number) => {
         throw err
     }
 }
-//GEt by id
+//GEt by id by admin
 export const getUserByID = async (id: number) => {
     try {
         const user = await prisma.user.findFirstOrThrow({
@@ -159,6 +150,7 @@ export const getUserByID = async (id: number) => {
         throw err
     }
 }
+
 //GET all user for admin
 export const getAllUser = async () => {
     try {
@@ -174,7 +166,8 @@ export const updateUser = async (
     id: number,
     body: z.infer<typeof signupBodyDTO>
 ) => {
-    const { email, password } = body
+    const { password } = body
+    let pass = await bcrypt.hash(password, 10)
     try {
         await prisma.user.findUniqueOrThrow({
             where: { id: Number(id) },
@@ -182,8 +175,7 @@ export const updateUser = async (
         return await prisma.user.update({
             where: { id: Number(id) },
             data: {
-                email: email,
-                password: password,
+                password: pass,
             },
         })
     } catch (err: any) {

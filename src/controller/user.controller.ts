@@ -10,9 +10,9 @@ export const deleteUser = async (
     next: NextFunction
 ) => {
     try {
-        const { email, password } = loginBodyDTO.parse(req.body)
+        const id = req.user.userId
         const is_admin = req.user.isAdmin
-        const user = await userService.removeUser(email, password, is_admin)
+        const user = await userService.removeUser(id, is_admin)
         res.json('deleted')
     } catch (error) {
         next(error)

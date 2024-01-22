@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import * as adminController from '../controller/admin.controller'
 import * as authController from '../controller/auth.controller'
+import categoryRouter from './categories.router'
 import { validate } from '../util/validate'
 import { loginDTO, signupDTO } from '../validators/auth.validators'
 import { authenticateToken, isAdmin } from '../middlewares/auth.middleware'
@@ -20,5 +21,7 @@ router.put('/update', authenticateToken, isAdmin, adminController.updateUser)
 router.get('/', authenticateToken, isAdmin, adminController.getUser)
 router.get('/:id', authenticateToken, isAdmin, adminController.getUserByID)
 router.get('/all-users', authenticateToken, isAdmin, adminController.getAllUser)
+
+router.use('/categories', categoryRouter)
 
 export default router
