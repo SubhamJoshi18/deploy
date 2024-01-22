@@ -1,7 +1,7 @@
 import express from 'express'
 import userRouter from './routes/user.router'
 import adminRouter from './routes/admin.router'
-import { Response, Request, NextFunction } from 'express'
+import { RequestHandler, Response, Request, NextFunction } from 'express'
 import buildError from './util/build-errors'
 const app = express()
 
